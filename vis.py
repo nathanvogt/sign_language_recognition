@@ -23,7 +23,7 @@ dataset = Sign_Dataset(
     include_confidence=True,
 )
 
-dataloader = DataLoader(dataset, batch_size=1, shuffle=True)
+dataloader = DataLoader(dataset, batch_size=1, shuffle=False)
 
 x, y, video_id = next(iter(dataloader))
 
@@ -49,13 +49,10 @@ connections = [
     (5, 6, "L_Elbow"),
     (6, 7, "L_Wrist"),
     (1, 8, "Mid_Hip"),
-    (8, 9, "R_Hip"),
     (9, 10, "Eyes"),
     (9, 11, "R_Ear"),
-    (8, 10, "L_Ear"),
+    (12, 10, "L_Ear"),
     # Right Hand
-    (4, 12, "R_Thumb_CMC"),
-    (12, 13, "R_Thumb_MCP"),
     (13, 14, "R_Thumb_IP"),
     (14, 15, "R_Thumb_Tip"),
     (4, 16, "R_Index_MCP"),
@@ -99,8 +96,7 @@ connections = [
 
 labels = [ax.text(0, 0, "", fontsize=8, color="green") for _ in connections]
 
-CONFIDENCE_THRESHOLD = 0.01
-
+CONFIDENCE_THRESHOLD = 0.001
 def update(frame):
     frame_data = poses[:, frame, :]
     confident_points = frame_data[:, 2] > CONFIDENCE_THRESHOLD
@@ -109,20 +105,27 @@ def update(frame):
 
     for i, (start, end, label_text) in enumerate(connections):
         if confident_points[start] and confident_points[end]:
+            start_point = frame_data[start, :2]
+            end_point = frame_data[end, :2]
             lines[i].set_data(
-                [frame_data[start, 0], frame_data[end, 0]],
-                [frame_data[start, 1], frame_data[end, 1]],
+                [start_point[0], end_point[0]],
+                [start_point[1], end_point[1]],
             )
+            # Update label position to the midpoint of the connection
+            label_pos = ((start_point + end_point) / 2)
+            labels[i].set_position(label_pos)
+            labels[i].set_text(label_text)
         else:
             lines[i].set_data([], [])
+            labels[i].set_text("")
 
-    return scatter, *lines
+    return scatter, *lines, *labels
 
 anim = animation.FuncAnimation(
     fig, update, frames=num_frames, interval=1000 / 30, blit=True, repeat=True
 )
 
-
+# Add pause/resume functionality
 paused = False
 def on_key_press(event):
     global paused
