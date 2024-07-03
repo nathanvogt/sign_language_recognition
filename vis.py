@@ -101,7 +101,6 @@ labels = [ax.text(0, 0, "", fontsize=8, color="green") for _ in connections]
 
 CONFIDENCE_THRESHOLD = 0.01
 
-
 def update(frame):
     frame_data = poses[:, frame, :]
     confident_points = frame_data[:, 2] > CONFIDENCE_THRESHOLD
@@ -119,9 +118,21 @@ def update(frame):
 
     return scatter, *lines
 
-
 anim = animation.FuncAnimation(
     fig, update, frames=num_frames, interval=1000 / 30, blit=True, repeat=True
 )
+
+
+paused = False
+def on_key_press(event):
+    global paused
+    if event.key == ' ':
+        if paused:
+            anim.resume()
+        else:
+            anim.pause()
+        paused = not paused
+
+fig.canvas.mpl_connect('key_press_event', on_key_press)
 
 plt.show()
