@@ -24,15 +24,18 @@ dataset = Sign_Dataset(
 )
 
 dataloader = DataLoader(dataset, batch_size=1, shuffle=False)
-
-x, y, video_id = next(iter(dataloader))
+idk = iter(dataloader)
+video_idx = 7
+for i in range(video_idx):
+    next(idk)
+x, y, video_id = next(idk)
 
 num_frames = x.shape[2] // 3
 poses = x[0].reshape(55, num_frames, 3).numpy()
 
 fig, ax = plt.subplots(figsize=(10, 10))
 
-scatter = ax.scatter([], [], c="r", s=50)
+scatter = ax.scatter([], [], c="r", s=25)
 lines = [ax.plot([], [], c="b")[0] for _ in range(55)]
 
 ax.set_xlim(poses[:, :, 0].min(), poses[:, :, 0].max())
@@ -52,53 +55,62 @@ connections = [
     (9, 10, "Eyes"),
     (9, 11, "R_Ear"),
     (12, 10, "L_Ear"),
-    # Right Hand
-    (13, 14, "R_Thumb_IP"),
-    (14, 15, "R_Thumb_Tip"),
-    (4, 16, "R_Index_MCP"),
-    (16, 17, "R_Index_PIP"),
-    (17, 18, "R_Index_DIP"),
-    (18, 19, "R_Index_Tip"),
-    (4, 20, "R_Middle_MCP"),
-    (20, 21, "R_Middle_PIP"),
-    (21, 22, "R_Middle_DIP"),
-    (22, 23, "R_Middle_Tip"),
-    (4, 24, "R_Ring_MCP"),
-    (24, 25, "R_Ring_PIP"),
-    (25, 26, "R_Ring_DIP"),
-    (26, 27, "R_Ring_Tip"),
-    (4, 28, "R_Pinky_MCP"),
-    (28, 29, "R_Pinky_PIP"),
-    (29, 30, "R_Pinky_DIP"),
-    (30, 31, "R_Pinky_Tip"),
     # Left Hand
-    (7, 32, "L_Thumb_CMC"),
-    (32, 33, "L_Thumb_MCP"),
-    (33, 34, "L_Thumb_IP"),
-    (34, 35, "L_Thumb_Tip"),
-    (7, 36, "L_Index_MCP"),
-    (36, 37, "L_Index_PIP"),
-    (37, 38, "L_Index_DIP"),
-    (38, 39, "L_Index_Tip"),
-    (7, 40, "L_Middle_MCP"),
-    (40, 41, "L_Middle_PIP"),
-    (41, 42, "L_Middle_DIP"),
-    (42, 43, "L_Middle_Tip"),
-    (7, 44, "L_Ring_MCP"),
-    (44, 45, "L_Ring_PIP"),
-    (45, 46, "L_Ring_DIP"),
-    (46, 47, "L_Ring_Tip"),
-    (7, 48, "L_Pinky_MCP"),
-    (48, 49, "L_Pinky_PIP"),
-    (49, 50, "L_Pinky_DIP"),
-    (50, 51, "L_Pinky_Tip"),
+    (7, 14, "R_Wrist_to_Thumb"),
+    (14, 15, "idk"),
+    (15, 16, "idk"),
+    (16, 17, "idk"),
+    (7, 18, "idk"),
+    (18, 19, "idk"),
+    (19, 20, "idk"),
+    (20, 21, "idk"),
+    (7, 22, "idk"),
+    (22, 23, "idk"),
+    (23, 24, "idk"),
+    (24, 25, "idk"),
+    (7, 26, "idk"),
+    (26, 27, "idk"),
+    (27, 28, "idk"),
+    (28, 29, "idk"),
+    (7, 30, "idk"),
+    (30, 31, "idk"),
+    (31, 32, "idk"),
+    (32, 33, "idk"),
+    # Right Hand
+    (4, 34, "L_Wrist_to_Thumb"),
+    (34, 35, "idk"),
+    (35, 36, "idk"),    
+    (36, 37, "idk"),
+    (37, 38, "idk"),
+    (4, 39, "idk"),
+    (39, 40, "idk"),
+    (40, 41, "idk"),
+    (41, 42, "idk"),
+    (4, 43, "idk"),
+    (43, 44, "idk"),
+    (44, 45, "idk"),
+    (45, 46, "idk"),
+    (4, 47, "idk"),
+    (47, 48, "idk"),
+    (48, 49, "idk"),
+    (49, 50, "idk"),
+    (4, 51, "idk"),
+    (51, 52, "idk"),
+    (52, 53, "idk"),
+    (53, 54, "idk"),
 ]
 
 labels = [ax.text(0, 0, "", fontsize=8, color="green") for _ in connections]
 
-CONFIDENCE_THRESHOLD = 0.001
-def update(frame):
-    frame_data = poses[:, frame, :]
+CONFIDENCE_THRESHOLD = 0.0
+
+current_frame = 0
+anim = None
+
+def update(frame_num):
+    global current_frame
+    current_frame = frame_num
+    frame_data = poses[:, frame_num, :]
     confident_points = frame_data[:, 2] > CONFIDENCE_THRESHOLD
 
     scatter.set_offsets(frame_data[confident_points, :2])
@@ -121,20 +133,30 @@ def update(frame):
 
     return scatter, *lines, *labels
 
+
 anim = animation.FuncAnimation(
     fig, update, frames=num_frames, interval=1000 / 30, blit=True, repeat=True
 )
 
-# Add pause/resume functionality
 paused = False
 def on_key_press(event):
-    global paused
+    global paused, current_frame, anim
     if event.key == ' ':
         if paused:
             anim.resume()
         else:
             anim.pause()
         paused = not paused
+    elif event.key == 'right' and paused:
+        current_frame = (current_frame + 1) % num_frames
+        anim.frame_seq = anim.new_frame_seq()
+        [next(anim.frame_seq) for _ in range(current_frame)]
+        anim._draw_next_frame(None, blit=True)
+    elif event.key == 'left' and paused:
+        current_frame = (current_frame - 1) % num_frames
+        anim.frame_seq = anim.new_frame_seq()
+        [next(anim.frame_seq) for _ in range(current_frame)]
+        anim._draw_next_frame(None, blit=True)
 
 fig.canvas.mpl_connect('key_press_event', on_key_press)
 

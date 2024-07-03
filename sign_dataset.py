@@ -271,7 +271,6 @@ class Sign_Dataset(Dataset):
                     print(pose_path)
 
         pad = None
-        print(f"num poses: {len(poses)}")
         # if len(frames_to_sample) < num_samples:
         if len(poses) < num_samples:
             num_padding = num_samples - len(frames_to_sample)
